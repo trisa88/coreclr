@@ -38,14 +38,17 @@ call "%__ProjectDir%"\setup_vs_tools.cmd
 REM setup_vs_tools.cmd will correctly echo error message.
 if NOT '%ERRORLEVEL%' == '0' exit /b 1
 
-call %__ProjectDir%/dotnet.cmd msbuild /nologo /verbosity:minimal /clp:Summary /nodeReuse:false^
+powershell -NoProfile -ExecutionPolicy ByPass -NoLogo -File "%~dp0eng\common\build.ps1"^
+  -r -b -projects %__ProjectDir%\src\.nuget\packages.builds^
+  -verbosity minimal /nodeReuse:false /p:ArcadeBuild=true^
   /p:__BuildOS=Windows_NT /flp:v=detailed;Append;LogFile=build-packages.log^
   /l:BinClashLogger,Tools/Microsoft.DotNet.Build.Tasks.dll;LogFile=binclash.log^
-  /p:PortableBuild=true %__ProjectDir%\src\.nuget\packages.builds^
-  /p:FilterToOSGroup=Windows_NT %__MSBuildArgs% %unprocessedArgs%
+  /p:PortableBuild=true /p:FilterToOSGroup=Windows_NT^
+  %__MSBuildArgs% %unprocessedArgs%
+
 if NOT [!ERRORLEVEL!]==[0] (
   echo ERROR: An error occurred while building packages, see build-packages.log for more details.
-  exit /b 1
+  exit /b !ERRORLEVEL!
 )
 
 echo Done Building Packages.
